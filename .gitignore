@@ -1,0 +1,5 @@
+#Directories
+cmake-build-debug
+.idea/
+build/
+firmware/
