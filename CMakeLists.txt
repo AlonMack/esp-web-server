@@ -13,6 +13,7 @@ set(SOURCE_FILES
         app/include/driver/uart_register.h
         app/driver/uart.c
         app/user/ap_connect.h
+        app/user/util.h
         app/user/ap_connect.c)
 
 add_executable(esp_web_server ${SOURCE_FILES})

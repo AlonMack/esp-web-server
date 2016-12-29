@@ -41,5 +41,6 @@ void user_init(void) {
     ets_wdt_enable();
     ets_wdt_disable();
 
-    user_set_softap_config();
+    setup_wifi_ap_mode();
+    config_server_init();
 }
