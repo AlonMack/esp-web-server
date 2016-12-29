@@ -1,6 +1,7 @@
 #include <user_interface.h>
 #include <driver/uart.h>
-#include "ap_connect.h"
+#include "ap_config.h"
+#include "httpd.h"
 
 extern void ets_wdt_enable(void);
 
