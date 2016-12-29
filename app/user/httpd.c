@@ -76,9 +76,14 @@ static void ICACHE_FLASH_ATTR noolite_config_server_recv(void *arg, char *data, 
     config_httpdStartResponse(conn, 200);
     config_httpdHeader(conn, "Content-Type", "text/html");
     config_httpdEndHeaders(conn);
-
-    if (!config_httpdSend(conn, buff, os_sprintf(buff, index_html))) {
-        DEBUG_LOGGING("Error httpdSend: pageStart out-of-memory\r\n");
+    if (os_strncmp(data, "GET /mypage", 11) == 0) {
+        if (!config_httpdSend(conn, buff, os_sprintf(buff, page_html))) {
+            DEBUG_LOGGING("Error httpdSend: pageStart out-of-memory\r\n");
+        }
+    } else {
+        if (!config_httpdSend(conn, buff, os_sprintf(buff, index_html))) {
+            DEBUG_LOGGING("Error httpdSend: pageStart out-of-memory\r\n");
+        }
     }
     killConn = 1;
 
@@ -92,6 +97,23 @@ static void ICACHE_FLASH_ATTR noolite_config_server_sent(void *arg) {
     if (conn == NULL) return;
     if (killConn) {
         espconn_disconnect(conn->conn);
+    }
+}
+
+static void ICACHE_FLASH_ATTR config_httpdRetireConn(HttpdConnData *conn) {
+    conn->conn = NULL;
+}
+
+static void ICACHE_FLASH_ATTR noolite_config_server_discon(void *arg) {
+    DEBUG_LOGGING("noolite_config_server_discon\r\n");
+    int i;
+    for (i = 0; i < MAX_CONN; i++) {
+        if (connData[i].conn != NULL) {
+            if (connData[i].conn->state == ESPCONN_NONE || connData[i].conn->state >= ESPCONN_CLOSE) {
+                connData[i].conn = NULL;
+                config_httpdRetireConn(&connData[i]);
+            }
+        }
     }
 }
 
@@ -114,6 +136,7 @@ static void ICACHE_FLASH_ATTR noolite_config_server_connect(void *arg) {
 
     espconn_regist_recvcb(conn, noolite_config_server_recv);
     espconn_regist_sentcb(conn, noolite_config_server_sent);
+    espconn_regist_disconcb(conn, noolite_config_server_discon);
 }
 
 void ICACHE_FLASH_ATTR config_server_init() {
