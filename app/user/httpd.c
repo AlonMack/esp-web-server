@@ -1,6 +1,7 @@
 #include <user_config.h>
 #include <user_interface.h>
 #include <osapi.h>
+#include <mem.h>
 #include "espconn.h"
 #include "util.h"
 #include "httpd.h"
@@ -60,9 +61,52 @@ static ICACHE_FLASH_ATTR void ICACHE_FLASH_ATTR config_xmitSendBuff(HttpdConnDat
     }
 }
 
+char ICACHE_FLASH_ATTR *str_replace(const char *orig, char *rep, char *with) {
+    char *result; // the return string
+    char *ins;    // the next insert point
+    char *tmp;    // varies
+    int len_rep;  // length of rep
+    int len_with; // length of with
+    int len_front; // distance between rep and end of last rep
+    int count;    // number of replacements
+
+    if (!orig)
+        return NULL;
+    if (!rep)
+        rep = "";
+    len_rep = os_strlen(rep);
+    if (!with)
+        with = "";
+    len_with = os_strlen(with);
+
+    ins = (char *) orig;
+    for (count = 0; tmp = (char *) os_strstr(ins, rep); ++count) {
+        ins = tmp + len_rep;
+    }
+
+    // first time through the loop, all the variable are set correctly
+    // from here on,
+    //    tmp points to the end of the result string
+    //    ins points to the next occurrence of rep in orig
+    //    orig points to the remainder of orig after "end of rep"
+    tmp = result = (char *) os_malloc(strlen(orig) + (len_with - len_rep) * count + 1);
+
+    if (!result)
+        return NULL;
+
+    while (count--) {
+        ins = (char *) os_strstr(orig, rep);
+        len_front = ins - orig;
+        tmp = (char *) os_strncpy(tmp, orig, len_front) + len_front;
+        tmp = (char *) os_strcpy(tmp, with) + len_with;
+        orig += len_front + len_rep; // move to next "end of rep"
+    }
+    os_strcpy(tmp, orig);
+    return result;
+}
+
 static void ICACHE_FLASH_ATTR noolite_config_server_recv(void *arg, char *data, unsigned short len) {
     DEBUG_LOGGING("noolite_config_server_recv\r\n");
-
     char sendBuff[MAX_SENDBUFF_LEN];
     HttpdConnData *conn = config_httpdFindConnData(arg);
 
@@ -76,12 +120,17 @@ static void ICACHE_FLASH_ATTR noolite_config_server_recv(void *arg, char *data, 
     config_httpdStartResponse(conn, 200);
     config_httpdHeader(conn, "Content-Type", "text/html");
     config_httpdEndHeaders(conn);
+    DEBUG_LOGGING(data, "\r\n")
     if (os_strncmp(data, "GET /mypage", 11) == 0) {
-        if (!config_httpdSend(conn, buff, os_sprintf(buff, page_html))) {
+        GPIO_OUTPUT_SET(2, 0);
+        os_delay_us(50000);
+        if (!config_httpdSend(conn, buff, os_sprintf(buff, "%s", str_replace(page_html, "${1gpio_state}", "1")))) {
             DEBUG_LOGGING("Error httpdSend: pageStart out-of-memory\r\n");
         }
-    } else {
-        if (!config_httpdSend(conn, buff, os_sprintf(buff, index_html))) {
+    } else if(os_strncmp(data, "GET / ", 6) == 0) {
+        GPIO_OUTPUT_SET(2, 1);
+        os_delay_us(50000);
+        if (!config_httpdSend(conn, buff, os_sprintf(buff, "%s", str_replace(index_html, "${1gpio_state}", "0")))) {
             DEBUG_LOGGING("Error httpdSend: pageStart out-of-memory\r\n");
         }
     }

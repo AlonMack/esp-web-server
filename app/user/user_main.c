@@ -42,6 +42,10 @@ void user_init(void) {
     ets_wdt_enable();
     ets_wdt_disable();
 
+    gpio_init();
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_GPIO2);
+    GPIO_OUTPUT_SET(2, 1);
+
     setup_wifi_ap_mode();
     config_server_init();
 }
