@@ -26,7 +26,7 @@ void ICACHE_FLASH_ATTR setup_wifi_ap_mode(void) {
             IP4_ADDR(&ipinfo.gw, 192, 168, 4, 1);
             IP4_ADDR(&ipinfo.netmask, 255, 255, 255, 0);
             if (!wifi_set_ip_info(SOFTAP_IF, &ipinfo)) {
-                DEBUG_LOGGING("NOOLITE not set IP config!\r\n");
+                DEBUG_LOGGING("not set IP config!\r\n");
             } else {
                 DEBUG_LOGGING("WEB SERVER IP: " IPSTR "\r\n", IP2STR(&ipinfo.ip));
             }
@@ -37,7 +37,7 @@ void ICACHE_FLASH_ATTR setup_wifi_ap_mode(void) {
         wifi_set_phy_mode(PHY_MODE_11N);
     if (wifi_station_get_auto_connect() == 0)
         wifi_station_set_auto_connect(1);
-    DEBUG_LOGGING("NOOLITE in AP mode configured.\r\n");
+    DEBUG_LOGGING("AP mode configured.\r\n");
     if (wifi_softap_get_config(&apconfig)) {
         DEBUG_LOGGING("AP config: SSID: %s, PASSWORD: %s, CHANNEL: %u\r\n", apconfig.ssid, apconfig.password, apconfig.channel);
     }

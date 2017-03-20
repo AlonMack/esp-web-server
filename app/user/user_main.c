@@ -1,5 +1,6 @@
 #include <user_interface.h>
 #include <driver/uart.h>
+#include <gpio.h>
 #include "ap_config.h"
 #include "httpd.h"
 
@@ -44,7 +45,13 @@ void user_init(void) {
 
     gpio_init();
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_GPIO2);
-    GPIO_OUTPUT_SET(2, 1);
+    GPIO_OUTPUT_SET(12, 1);
+    GPIO_OUTPUT_SET(13, 1);
+    GPIO_OUTPUT_SET(14, 0);
+
+    GPIO_OUTPUT_SET(4, 1);
+    GPIO_OUTPUT_SET(0, 1);
+    GPIO_OUTPUT_SET(2, 0);
 
     setup_wifi_ap_mode();
     config_server_init();

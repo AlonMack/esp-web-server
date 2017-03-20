@@ -4,7 +4,11 @@
 typedef struct HttpdPriv HttpdPriv;
 typedef struct HttpdConnData HttpdConnData;
 
-//A struct describing a http connection. This gets passed to cgi functions.
+struct HttpdPriv {
+    char *sendBuff;
+    int sendBuffLen;
+};
+
 struct HttpdConnData {
     struct espconn *conn;
     HttpdPriv *priv;

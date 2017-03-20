@@ -2,6 +2,7 @@
 #include <user_interface.h>
 #include <osapi.h>
 #include <mem.h>
+#include <gpio.h>
 #include "espconn.h"
 #include "util.h"
 #include "httpd.h"
@@ -10,11 +11,6 @@
 static struct espconn esp_conn;
 static esp_tcp esptcp;
 static unsigned char killConn;
-
-struct HttpdPriv {
-    char *sendBuff;
-    int sendBuffLen;
-};
 
 static HttpdPriv connPrivData[MAX_CONN];
 static HttpdConnData connData[MAX_CONN];
@@ -105,8 +101,8 @@ char ICACHE_FLASH_ATTR *str_replace(const char *orig, char *rep, char *with) {
     return result;
 }
 
-static void ICACHE_FLASH_ATTR noolite_config_server_recv(void *arg, char *data, unsigned short len) {
-    DEBUG_LOGGING("noolite_config_server_recv\r\n");
+static void ICACHE_FLASH_ATTR config_server_recv(void *arg, char *data, unsigned short len) {
+    DEBUG_LOGGING("config_server_recv\r\n");
     char sendBuff[MAX_SENDBUFF_LEN];
     HttpdConnData *conn = config_httpdFindConnData(arg);
 
@@ -120,15 +116,21 @@ static void ICACHE_FLASH_ATTR noolite_config_server_recv(void *arg, char *data, 
     config_httpdStartResponse(conn, 200);
     config_httpdHeader(conn, "Content-Type", "text/html");
     config_httpdEndHeaders(conn);
-    DEBUG_LOGGING(data, "\r\n")
+    DEBUG_LOGGING(data, "\r\n");
     if (os_strncmp(data, "GET /mypage", 11) == 0) {
-        GPIO_OUTPUT_SET(2, 0);
+        GPIO_OUTPUT_SET(12, 0);
+        GPIO_OUTPUT_SET(4, 0);
+        GPIO_OUTPUT_SET(13, 1);
+        GPIO_OUTPUT_SET(0, 1);
         os_delay_us(50000);
         if (!config_httpdSend(conn, buff, os_sprintf(buff, "%s", str_replace(page_html, "${1gpio_state}", "1")))) {
             DEBUG_LOGGING("Error httpdSend: pageStart out-of-memory\r\n");
         }
     } else if(os_strncmp(data, "GET / ", 6) == 0) {
-        GPIO_OUTPUT_SET(2, 1);
+        GPIO_OUTPUT_SET(12, 1);
+        GPIO_OUTPUT_SET(4, 1);
+        GPIO_OUTPUT_SET(13, 0);
+        GPIO_OUTPUT_SET(0, 0);
         os_delay_us(50000);
         if (!config_httpdSend(conn, buff, os_sprintf(buff, "%s", str_replace(index_html, "${1gpio_state}", "0")))) {
             DEBUG_LOGGING("Error httpdSend: pageStart out-of-memory\r\n");
@@ -183,7 +185,7 @@ static void ICACHE_FLASH_ATTR noolite_config_server_connect(void *arg) {
     connData[i].postLen = 0;
     connData[i].priv = &connPrivData[i];
 
-    espconn_regist_recvcb(conn, noolite_config_server_recv);
+    espconn_regist_recvcb(conn, config_server_recv);
     espconn_regist_sentcb(conn, noolite_config_server_sent);
     espconn_regist_disconcb(conn, noolite_config_server_discon);
 }
